@@ -5,7 +5,6 @@ import {
   Badge,
   Button,
   Card,
-  Checkbox,
   Collapse,
   CopyButton,
   Group,
@@ -15,6 +14,7 @@ import {
   IconBrandGoogle,
   IconBuildingSkyscraper,
   IconCheck,
+  IconCircleCheck,
   IconCopy,
   IconDownload,
   IconExternalLink,
@@ -92,20 +92,11 @@ export default function JobCard({ job, index, applied, onToggleApplied }: JobCar
           ) : null}
         </div>
 
-        <Group gap="xs" wrap="nowrap" align="center">
-          {job.score != null ? (
-            <Badge size="lg" radius="xl" color={accent} variant="filled">
-              {job.score}
-            </Badge>
-          ) : null}
-          <Checkbox
-            checked={!!applied}
-            onChange={onToggleApplied}
-            label="Sudah dilamar"
-            size="sm"
-            color="teal"
-          />
-        </Group>
+        {job.score != null ? (
+          <Badge size="lg" radius="xl" color={accent} variant="filled">
+            {job.score}
+          </Badge>
+        ) : null}
       </Group>
 
       {isEmail ? (
@@ -199,6 +190,20 @@ export default function JobCard({ job, index, applied, onToggleApplied }: JobCar
           </Button>
         ) : null}
       </Group>
+
+      {onToggleApplied ? (
+        <Button
+          variant={applied ? "light" : "default"}
+          color={applied ? "teal" : undefined}
+          fullWidth
+          mt="md"
+          size="md"
+          leftSection={applied ? <IconCheck size={18} /> : <IconCircleCheck size={18} />}
+          onClick={onToggleApplied}
+        >
+          {applied ? "Sudah dilamar · ketuk untuk batal" : "Tandai sudah dilamar"}
+        </Button>
+      ) : null}
 
       <Button
         variant="subtle"

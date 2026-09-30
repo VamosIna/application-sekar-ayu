@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Badge,
   Button,
@@ -38,7 +38,12 @@ export default function UpdateCalendar({ selected, onSelect }: UpdateCalendarPro
   }, []);
 
   const latest = history[history.length - 1];
-  const activeDate = selected ?? latest?.date;
+  const [displayDate, setDisplayDate] = useState<string | undefined>(latest?.date);
+
+  // kalau tanggal dipilih dari Timeline (atau direset), ikutkan bulan yang tampil
+  useEffect(() => {
+    if (selected) setDisplayDate(selected);
+  }, [selected]);
 
   return (
     <Card withBorder radius="lg" padding="lg">
@@ -66,24 +71,30 @@ export default function UpdateCalendar({ selected, onSelect }: UpdateCalendarPro
       </Group>
 
       <Calendar
-        date={activeDate}
+        date={displayDate}
         onDateChange={(d) => {
-          if (d) onSelect(d === latest?.date && selected === null ? null : d);
+          // dipanggil saat navigasi bulan/tahun — hanya untuk memindah tampilan
+          if (d) setDisplayDate(d);
         }}
         excludeDate={(d) => !map.has(d)}
         hideOutsideDates
         getDayProps={(d) => {
           const entry = map.get(d);
-          if (!entry) return {};
           const isActive = d === selected;
           return {
-            style: {
-              backgroundColor: isActive
-                ? "var(--mantine-color-blue-6)"
-                : "var(--mantine-color-blue-light)",
-              color: isActive ? "#fff" : "var(--mantine-color-blue-light-color)",
-              fontWeight: 700,
+            // klik tanggal -> filter daftar (Calendar tidak memanggil onDateChange saat hari diklik)
+            onClick: () => {
+              if (entry) onSelect(isActive ? null : d);
             },
+            style: entry
+              ? {
+                  backgroundColor: isActive
+                    ? "var(--mantine-color-blue-6)"
+                    : "var(--mantine-color-blue-light)",
+                  color: isActive ? "#fff" : "var(--mantine-color-blue-light-color)",
+                  fontWeight: 700,
+                }
+              : undefined,
           };
         }}
       />
