@@ -8,11 +8,17 @@ import {
   Collapse,
   CopyButton,
   Group,
+  Progress,
+  Stack,
   Text,
+  ThemeIcon,
+  Tooltip,
 } from "@mantine/core";
 import {
+  IconAlertTriangle,
   IconBrandGoogle,
   IconBuildingSkyscraper,
+  IconBulb,
   IconCheck,
   IconCircleCheck,
   IconCopy,
@@ -34,6 +40,7 @@ interface JobCardProps {
 
 export default function JobCard({ job, index, applied, onToggleApplied }: JobCardProps) {
   const [open, setOpen] = useState(false);
+  const [showScore, setShowScore] = useState(false);
   const isEmail = job.method === "email";
   const accent = isEmail ? "blue" : "green";
   const webUrl = job.to ? buildGmailWebUrl(job.to, job.subject, job.body) : "#";
@@ -93,9 +100,11 @@ export default function JobCard({ job, index, applied, onToggleApplied }: JobCar
         </div>
 
         {job.score != null ? (
-          <Badge size="lg" radius="xl" color={accent} variant="filled">
-            {job.score}
-          </Badge>
+          <Tooltip label="Kecocokan dengan requirement" withArrow>
+            <Badge size="lg" radius="xl" color={accent} variant="filled">
+              {job.score}%
+            </Badge>
+          </Tooltip>
         ) : null}
       </Group>
 
@@ -203,6 +212,91 @@ export default function JobCard({ job, index, applied, onToggleApplied }: JobCar
         >
           {applied ? "Sudah dilamar · ketuk untuk batal" : "Tandai sudah dilamar"}
         </Button>
+      ) : null}
+
+      {job.reasons.length || job.gaps.length ? (
+        <>
+          <Button
+            variant="subtle"
+            size="xs"
+            mt="xs"
+            px={0}
+            leftSection={<IconBulb size={14} />}
+            onClick={() => setShowScore((s) => !s)}
+          >
+            {showScore
+              ? "Sembunyikan penilaian AI"
+              : `Penilaian AI · kecocokan ${job.score ?? "-"}%`}
+          </Button>
+
+          <Collapse in={showScore}>
+            <Card.Section inheritPadding py="sm">
+              {job.breakdown ? (
+                <div style={{ marginBottom: 12 }}>
+                  <Text size="xs" fw={700} mb={8}>
+                    Rincian per kriteria (berbobot)
+                  </Text>
+                  <Stack gap={7}>
+                    {Object.entries(job.breakdown)
+                      .sort((a, b) => b[1].weight - a[1].weight)
+                      .map(([key, d]) => (
+                        <div key={key}>
+                          <Group justify="space-between" gap="xs" mb={2} wrap="nowrap">
+                            <Text size="xs">{d.label}</Text>
+                            <Text size="xs" c="dimmed" style={{ whiteSpace: "nowrap" }}>
+                              {d.score}% · bobot {d.weight}%
+                            </Text>
+                          </Group>
+                          <Progress
+                            value={d.score}
+                            size="sm"
+                            radius="xl"
+                            color={d.score >= 75 ? "teal" : d.score >= 60 ? "blue" : "orange"}
+                          />
+                        </div>
+                      ))}
+                  </Stack>
+                </div>
+              ) : null}
+
+              {job.reasons.length ? (
+                <>
+                  <Text size="xs" fw={700} c="teal" mb={6}>
+                    Cocok karena
+                  </Text>
+                  <Stack gap={5}>
+                    {job.reasons.map((r, i) => (
+                      <Group key={i} gap="xs" wrap="nowrap" align="flex-start">
+                        <ThemeIcon size={16} radius="xl" variant="light" color="teal">
+                          <IconCheck size={11} />
+                        </ThemeIcon>
+                        <Text size="xs">{r}</Text>
+                      </Group>
+                    ))}
+                  </Stack>
+                </>
+              ) : null}
+
+              {job.gaps.length ? (
+                <div style={{ marginTop: 10 }}>
+                  <Text size="xs" fw={700} c="orange" mb={6}>
+                    Gap / kurang
+                  </Text>
+                  <Stack gap={5}>
+                    {job.gaps.map((g, i) => (
+                      <Group key={i} gap="xs" wrap="nowrap" align="flex-start">
+                        <ThemeIcon size={16} radius="xl" variant="light" color="orange">
+                          <IconAlertTriangle size={11} />
+                        </ThemeIcon>
+                        <Text size="xs">{g}</Text>
+                      </Group>
+                    ))}
+                  </Stack>
+                </div>
+              ) : null}
+            </Card.Section>
+          </Collapse>
+        </>
       ) : null}
 
       <Button

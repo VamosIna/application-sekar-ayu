@@ -7,6 +7,8 @@ export const jobs: Job[] = data.jobs;
 export const categories: string[] = data.categories;
 export const cv = data.cv;
 export const totals = data.totals;
+export const scoreWeights = data.score_weights ?? {};
+export const scoreDimensions = data.score_dimensions ?? {};
 export const minScore = data.min_score;
 export const generatedAt = data.generated_at;
 export const history: HistoryEntry[] = [...(data.history ?? [])].sort((a, b) =>

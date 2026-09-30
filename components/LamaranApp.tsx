@@ -28,6 +28,7 @@ import {
   IconMail,
   IconRotate,
   IconSparkles,
+  IconTargetArrow,
   IconWorld,
 } from "@tabler/icons-react";
 import Sidebar from "./Sidebar";
@@ -63,7 +64,7 @@ function Stat({
 }: {
   icon: React.ReactNode;
   label: string;
-  value: number;
+  value: React.ReactNode;
   color: string;
 }) {
   return (
@@ -143,6 +144,10 @@ export default function LamaranApp() {
     return items;
   }, [filters, category, selectedDate, showApplied, applied]);
 
+  const avgScore = list.length
+    ? Math.round(list.reduce((sum, j) => sum + (j.score ?? 0), 0) / list.length)
+    : 0;
+
   const heading = selectedDate
     ? `Update ${formatDate(selectedDate)}`
     : `${
@@ -198,11 +203,12 @@ export default function LamaranApp() {
 
       <AppShell.Main>
         <Container size="lg" px={0}>
-          <SimpleGrid cols={{ base: 2, sm: 3, lg: 5 }} mb="md">
+          <SimpleGrid cols={{ base: 2, sm: 3, lg: 6 }} mb="md">
             <Stat icon={<IconBriefcase size={18} />} label="Total lowongan" value={jobs.length} color="blue" />
             <Stat icon={<IconMail size={18} />} label="Via email" value={totals.email} color="blue" />
             <Stat icon={<IconWorld size={18} />} label="Via portal" value={totals.portal} color="green" />
             <Stat icon={<IconSparkles size={18} />} label="Baru" value={totals.new ?? 0} color="yellow" />
+            <Stat icon={<IconTargetArrow size={18} />} label="Rata-rata kecocokan" value={`${avgScore}%`} color="grape" />
             <Stat icon={<IconCheck size={18} />} label="Sudah dilamar" value={applied.size} color="teal" />
           </SimpleGrid>
 

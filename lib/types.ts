@@ -1,5 +1,14 @@
 export type JobMethod = "email" | "portal";
 
+export interface DimensionScore {
+  score: number;
+  weight: number;
+  label: string;
+  note?: string;
+}
+
+export type Breakdown = Record<string, DimensionScore>;
+
 export interface Job {
   db_id: number;
   method: JobMethod;
@@ -16,6 +25,9 @@ export interface Job {
   subject: string;
   subject_source: string;
   body: string;
+  reasons: string[];
+  gaps: string[];
+  breakdown: Breakdown | null;
   first_seen?: string;
   updated_at?: string;
   is_new?: boolean;
@@ -47,6 +59,8 @@ export interface Payload {
   categories: string[];
   cv: CvInfo;
   totals: Totals;
+  score_weights?: Record<string, number>;
+  score_dimensions?: Record<string, string>;
   history: HistoryEntry[];
   jobs: Job[];
 }
