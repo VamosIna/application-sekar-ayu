@@ -1,9 +1,35 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import {
+  AppShell,
+  Avatar,
+  Badge,
+  Box,
+  Burger,
+  Card,
+  Container,
+  Group,
+  ScrollArea,
+  SimpleGrid,
+  Stack,
+  Text,
+  TextInput,
+  ThemeIcon,
+  Title,
+} from "@mantine/core";
+import { useDisclosure } from "@mantine/hooks";
+import {
+  IconBriefcase,
+  IconMail,
+  IconSearch,
+  IconSparkles,
+  IconWorld,
+} from "@tabler/icons-react";
 import Sidebar from "./Sidebar";
 import JobCard from "./JobCard";
 import UpdateCalendar from "./UpdateCalendar";
+import ColorSchemeToggle from "./ColorSchemeToggle";
 import {
   DEFAULT_VIEW,
   formatDate,
@@ -11,14 +37,43 @@ import {
   getView,
   jobs,
   jobsForView,
-  lastUpdate,
   methodLabel,
   totals,
 } from "@/lib/data";
 
+function Stat({
+  icon,
+  label,
+  value,
+  color,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: number;
+  color: string;
+}) {
+  return (
+    <Card withBorder radius="lg" padding="md">
+      <Group gap="sm" wrap="nowrap">
+        <ThemeIcon variant="light" color={color} radius="md" size="lg">
+          {icon}
+        </ThemeIcon>
+        <div>
+          <Text fw={700} fz="xl" lh={1}>
+            {value}
+          </Text>
+          <Text size="xs" c="dimmed">
+            {label}
+          </Text>
+        </div>
+      </Group>
+    </Card>
+  );
+}
+
 export default function LamaranApp() {
+  const [opened, { toggle, close }] = useDisclosure(false);
   const [view, setView] = useState(DEFAULT_VIEW);
-  const [drawerOpen, setDrawerOpen] = useState(false);
   const [query, setQuery] = useState("");
 
   const current = getView(view);
@@ -36,76 +91,90 @@ export default function LamaranApp() {
 
   function handleSelect(id: string) {
     setView(id);
-    setDrawerOpen(false);
+    close();
   }
 
   return (
-    <div className="app">
-      <header className="topbar">
-        <button
-          className="icon-btn"
-          aria-label="Buka menu"
-          onClick={() => setDrawerOpen(true)}
-        >
-          <span className="burger" />
-        </button>
-        <div className="topbar-title">
-          <h1>Sekar Ayu Herdyningrum</h1>
-          <div className="sub">
-            {jobs.length} lowongan &middot; {totals.email} via email &middot; {totals.portal} via
-            portal
-            {totals.new ? ` · ${totals.new} baru` : ""}
-          </div>
-        </div>
-        <input
-          className="search"
-          type="search"
-          placeholder="Cari posisi / perusahaan / kota"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          aria-label="Cari lowongan"
-        />
-      </header>
+    <AppShell
+      header={{ height: 64 }}
+      navbar={{ width: 292, breakpoint: "md", collapsed: { mobile: !opened } }}
+      padding="md"
+    >
+      <AppShell.Header>
+        <Group h="100%" px="md" justify="space-between" wrap="nowrap">
+          <Group wrap="nowrap" gap="sm">
+            <Burger opened={opened} onClick={toggle} hiddenFrom="md" size="sm" />
+            <Avatar radius="xl" color="blue" variant="gradient" gradient={{ from: "blue", to: "green" }}>
+              SA
+            </Avatar>
+            <Box visibleFrom="sm">
+              <Text fw={700} lh={1.15}>
+                Sekar Ayu Herdyningrum
+              </Text>
+              <Text size="xs" c="dimmed">
+                {jobs.length} lowongan &middot; {totals.email} email &middot; {totals.portal} portal
+              </Text>
+            </Box>
+          </Group>
 
-      <div className="layout">
-        <Sidebar
-          view={view}
-          onSelect={handleSelect}
-          open={drawerOpen}
-          onClose={() => setDrawerOpen(false)}
-        />
+          <Group wrap="nowrap" gap="xs">
+            <TextInput
+              placeholder="Cari posisi / perusahaan"
+              leftSection={<IconSearch size={16} />}
+              value={query}
+              onChange={(e) => setQuery(e.currentTarget.value)}
+              w={{ base: 150, sm: 260 }}
+            />
+            <ColorSchemeToggle />
+          </Group>
+        </Group>
+      </AppShell.Header>
 
-        <main className="main">
-          <details className="history-card">
-            <summary>
-              Riwayat update
-              {lastUpdate ? ` · terakhir ${formatDate(lastUpdate.date)}` : ""}
-            </summary>
-            <UpdateCalendar />
-          </details>
+      <AppShell.Navbar p="md">
+        <AppShell.Section grow component={ScrollArea}>
+          <Sidebar view={view} onSelect={handleSelect} />
+        </AppShell.Section>
+      </AppShell.Navbar>
 
-          <div className="view-head">
-            <h2>
+      <AppShell.Main>
+        <Container size="lg" px={0}>
+          <SimpleGrid cols={{ base: 2, sm: 4 }} mb="md">
+            <Stat icon={<IconBriefcase size={18} />} label="Total lowongan" value={jobs.length} color="blue" />
+            <Stat icon={<IconMail size={18} />} label="Via email" value={totals.email} color="blue" />
+            <Stat icon={<IconWorld size={18} />} label="Via portal" value={totals.portal} color="green" />
+            <Stat icon={<IconSparkles size={18} />} label="Baru" value={totals.new ?? 0} color="yellow" />
+          </SimpleGrid>
+
+          <UpdateCalendar />
+
+          <Group justify="space-between" align="center" mt="lg" mb="sm">
+            <Title order={4}>
               {current ? methodLabel(current.method) : ""}
-              {current && current.category ? ` · ${current.label}` : ""}
-            </h2>
-            <span className="view-count">{list.length} lowongan</span>
-          </div>
+              {current?.category ? ` · ${current.label}` : ""}
+            </Title>
+            <Badge variant="light" size="lg">
+              {list.length} lowongan
+            </Badge>
+          </Group>
 
-          {list.map((job, i) => (
-            <JobCard key={job.db_id} job={job} index={i + 1} />
-          ))}
+          <Stack gap="md">
+            {list.map((job, i) => (
+              <JobCard key={job.db_id} job={job} index={i + 1} />
+            ))}
+            {list.length === 0 ? (
+              <Card withBorder radius="lg" padding="xl">
+                <Text ta="center" c="dimmed">
+                  Tidak ada lowongan yang cocok.
+                </Text>
+              </Card>
+            ) : null}
+          </Stack>
 
-          {list.length === 0 && <div className="empty">Tidak ada lowongan yang cocok.</div>}
-
-          <footer className="foot">
-            Daftar lamaran Sekar Ayu Herdyningrum &middot; update terakhir{" "}
-            {formatDate(generatedAt)}
-          </footer>
-        </main>
-      </div>
-
-      {drawerOpen && <div className="scrim" onClick={() => setDrawerOpen(false)} />}
-    </div>
+          <Text ta="center" size="xs" c="dimmed" mt="xl">
+            Update terakhir {formatDate(generatedAt)}
+          </Text>
+        </Container>
+      </AppShell.Main>
+    </AppShell>
   );
 }

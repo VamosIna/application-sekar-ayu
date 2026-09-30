@@ -1,9 +1,28 @@
 "use client";
 
 import { useState } from "react";
+import {
+  Badge,
+  Button,
+  Card,
+  Collapse,
+  CopyButton,
+  Group,
+  Text,
+} from "@mantine/core";
+import {
+  IconBrandGoogle,
+  IconBuildingSkyscraper,
+  IconCheck,
+  IconCopy,
+  IconDownload,
+  IconExternalLink,
+  IconLink,
+  IconMapPin,
+} from "@tabler/icons-react";
 import type { Job } from "@/lib/types";
 import { cv, formatDate } from "@/lib/data";
-import { buildGmailWebUrl, copyToClipboard, openGmail } from "@/lib/gmail";
+import { buildGmailWebUrl, openGmail } from "@/lib/gmail";
 
 interface JobCardProps {
   job: Job;
@@ -11,98 +30,188 @@ interface JobCardProps {
 }
 
 export default function JobCard({ job, index }: JobCardProps) {
-  const [copied, setCopied] = useState(false);
+  const [open, setOpen] = useState(false);
   const isEmail = job.method === "email";
-
-  async function handleCopy() {
-    await copyToClipboard(job.body);
-    setCopied(true);
-    window.setTimeout(() => setCopied(false), 1500);
-  }
-
-  function handleGmail(e: React.MouseEvent<HTMLAnchorElement>) {
-    if (!job.to) return;
-    e.preventDefault();
-    openGmail(job.to, job.subject, job.body);
-  }
-
+  const accent = isEmail ? "blue" : "green";
   const webUrl = job.to ? buildGmailWebUrl(job.to, job.subject, job.body) : "#";
 
   return (
-    <article className={`card ${job.method}`}>
-      <div className="card-head">
-        <div className="title">
-          <span className="num">{index}.</span> {job.title}
-          {job.is_new ? <span className="new-badge">BARU</span> : null}
+    <Card
+      withBorder
+      radius="lg"
+      padding="lg"
+      style={{ borderLeft: `4px solid var(--mantine-color-${accent}-6)` }}
+    >
+      <Group justify="space-between" align="flex-start" wrap="nowrap">
+        <div style={{ minWidth: 0 }}>
+          <Group gap="xs" wrap="nowrap">
+            <Text fw={700} style={{ wordBreak: "break-word" }}>
+              {index}. {job.title}
+            </Text>
+            {job.is_new ? (
+              <Badge color="yellow" variant="light" size="sm">
+                BARU
+              </Badge>
+            ) : null}
+          </Group>
+
+          <Group gap="md" mt={6}>
+            {job.source_label ? (
+              <Badge variant="default" size="sm">
+                {job.source_label}
+              </Badge>
+            ) : null}
+            {job.company ? (
+              <Group gap={4} wrap="nowrap">
+                <IconBuildingSkyscraper size={14} opacity={0.6} />
+                <Text size="xs" c="dimmed">
+                  {job.company}
+                </Text>
+              </Group>
+            ) : null}
+            {job.location ? (
+              <Group gap={4} wrap="nowrap">
+                <IconMapPin size={14} opacity={0.6} />
+                <Text size="xs" c="dimmed">
+                  {job.location}
+                </Text>
+              </Group>
+            ) : null}
+          </Group>
+
+          {job.posted_at ? (
+            <Text size="xs" c="dimmed" mt={6}>
+              Diposting {formatDate(job.posted_at)}
+            </Text>
+          ) : null}
         </div>
-        {job.score != null ? <div className="score">{job.score}</div> : null}
-      </div>
 
-      <div className="meta">
-        {job.source_label ? <span className="src-badge">{job.source_label}</span> : null}
-        {job.company ? <> &middot; {job.company}</> : null}
-        {job.location ? <> &middot; {job.location}</> : null}
-      </div>
-
-      {job.posted_at ? (
-        <div className="posted">Diposting {formatDate(job.posted_at)}</div>
-      ) : null}
+        {job.score != null ? (
+          <Badge size="lg" radius="xl" color={accent} variant="filled">
+            {job.score}
+          </Badge>
+        ) : null}
+      </Group>
 
       {isEmail ? (
         <>
-          <div className="to">
-            To: <b>{job.to}</b>
-          </div>
-          <div className="subj">
-            Subject: <b>{job.subject}</b>
-          </div>
+          <Text size="sm" mt="sm">
+            To:{" "}
+            <Text span fw={600}>
+              {job.to}
+            </Text>
+          </Text>
+          <Text size="sm">
+            Subject:{" "}
+            <Text span fw={600}>
+              {job.subject}
+            </Text>
+          </Text>
           {job.subject_source ? (
-            <div className="src">
+            <Text size="xs" c="green" mt={4}>
               &#10004; Sesuai format diminta: &ldquo;{job.subject_source}&rdquo;
-            </div>
+            </Text>
           ) : null}
         </>
       ) : (
-        <div className="subj">Lamaran via portal &middot; copy cover letter lalu paste di form</div>
+        <Text size="sm" c="dimmed" mt="sm">
+          Lamaran via portal &middot; copy cover letter lalu paste di form
+        </Text>
       )}
 
-      <div className="btns">
+      <Group mt="md" gap="xs">
         {isEmail ? (
-          <a className="btn primary" href={webUrl} onClick={handleGmail}>
+          <Button
+            color="blue"
+            leftSection={<IconBrandGoogle size={16} />}
+            component="a"
+            href={webUrl}
+            onClick={(e) => {
+              e.preventDefault();
+              if (job.to) openGmail(job.to, job.subject, job.body);
+            }}
+          >
             Buka di Gmail
-          </a>
+          </Button>
         ) : (
-          <a
-            className="btn primary portal"
+          <Button
+            color="green"
+            leftSection={<IconExternalLink size={16} />}
+            component="a"
             href={job.url || "#"}
             target="_blank"
             rel="noopener noreferrer"
           >
             Buka Lowongan / Lamar
-          </a>
+          </Button>
         )}
 
         {cv.url ? (
-          <a className="btn" href={cv.url} download={cv.name || undefined}>
+          <Button
+            variant="default"
+            leftSection={<IconDownload size={16} />}
+            component="a"
+            href={cv.url}
+            download={cv.name || undefined}
+          >
             Download CV
-          </a>
+          </Button>
         ) : null}
 
-        <button className="btn" onClick={handleCopy}>
-          {copied ? "Tersalin!" : "Copy cover letter"}
-        </button>
+        <CopyButton value={job.body} timeout={1500}>
+          {({ copied, copy }) => (
+            <Button
+              variant="default"
+              color={copied ? "green" : undefined}
+              leftSection={copied ? <IconCheck size={16} /> : <IconCopy size={16} />}
+              onClick={copy}
+            >
+              {copied ? "Tersalin!" : "Copy cover letter"}
+            </Button>
+          )}
+        </CopyButton>
 
         {isEmail && job.url ? (
-          <a className="btn ghost" href={job.url} target="_blank" rel="noopener noreferrer">
+          <Button
+            variant="subtle"
+            leftSection={<IconLink size={16} />}
+            component="a"
+            href={job.url}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
             Lowongan
-          </a>
+          </Button>
         ) : null}
-      </div>
+      </Group>
 
-      <details>
-        <summary>Lihat isi lamaran</summary>
-        <pre>{job.body}</pre>
-      </details>
-    </article>
+      <Button
+        variant="subtle"
+        size="xs"
+        mt="xs"
+        px={0}
+        onClick={() => setOpen((o) => !o)}
+      >
+        {open ? "Sembunyikan isi lamaran" : "Lihat isi lamaran"}
+      </Button>
+
+      <Collapse in={open}>
+        <Card.Section inheritPadding py="sm">
+          <Text
+            component="pre"
+            size="xs"
+            style={{
+              whiteSpace: "pre-wrap",
+              wordBreak: "break-word",
+              margin: 0,
+              fontFamily: "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace",
+              lineHeight: 1.55,
+            }}
+          >
+            {job.body}
+          </Text>
+        </Card.Section>
+      </Collapse>
+    </Card>
   );
 }
