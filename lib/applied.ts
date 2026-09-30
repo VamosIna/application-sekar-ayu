@@ -1,14 +1,16 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { seedAppliedIds } from "./data";
 
 const KEY = "lamaran.applied.v1";
+const SEEDED_KEY = "lamaran.applied.seeded.v1";
 
-function read(): Set<number> {
-  if (typeof window === "undefined") return new Set();
+function readRaw(): Set<number> | null {
+  if (typeof window === "undefined") return null;
   try {
     const raw = window.localStorage.getItem(KEY);
-    if (!raw) return new Set();
+    if (!raw) return null;
     const parsed = JSON.parse(raw);
     if (Array.isArray(parsed)) {
       return new Set(parsed.filter((n): n is number => typeof n === "number"));
@@ -17,6 +19,10 @@ function read(): Set<number> {
     /* ignore */
   }
   return new Set();
+}
+
+function read(): Set<number> {
+  return readRaw() ?? new Set();
 }
 
 function write(ids: Set<number>): boolean {
@@ -39,9 +45,28 @@ export function useApplied() {
   const [loaded, setLoaded] = useState(false);
   const [persisted, setPersisted] = useState(true);
 
-  // muat sekali dari storage + sinkron antar-tab
+  // muat sekali dari storage (+ tandai otomatis batch awal, sekali saja) + sinkron antar-tab
   useEffect(() => {
-    setApplied(read());
+    let seeded = true;
+    try {
+      seeded = window.localStorage.getItem(SEEDED_KEY) !== null;
+    } catch {
+      /* ignore */
+    }
+
+    if (!seeded) {
+      const next = readRaw() ?? new Set<number>();
+      seedAppliedIds.forEach((id) => next.add(id));
+      setApplied(next);
+      write(next);
+      try {
+        window.localStorage.setItem(SEEDED_KEY, "1");
+      } catch {
+        /* ignore */
+      }
+    } else {
+      setApplied(read());
+    }
     setLoaded(true);
 
     const onStorage = (e: StorageEvent) => {

@@ -14,6 +14,16 @@ export const history: HistoryEntry[] = [...(data.history ?? [])].sort((a, b) =>
 );
 export const lastUpdate: HistoryEntry | undefined = history[history.length - 1];
 
+// Lowongan email dari batch update paling awal (yang sudah dilamar manual oleh user).
+// Dipakai sekali untuk menandai otomatis sebagai "sudah dilamar".
+const firstBatch = history[0]?.date;
+export const seedAppliedIds: number[] = firstBatch
+  ? jobs
+      .filter((j) => j.method === "email" && (j.first_seen ?? "").slice(0, 10) === firstBatch)
+      .slice(0, 12)
+      .map((j) => j.db_id)
+  : [];
+
 function slug(value: string): string {
   return value
     .toLowerCase()
