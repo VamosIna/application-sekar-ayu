@@ -1,8 +1,9 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import {
   Badge,
+  Button,
   Card,
   Group,
   Text,
@@ -12,23 +13,36 @@ import {
 } from "@mantine/core";
 import { Calendar } from "@mantine/dates";
 import { IconCalendarEvent, IconCircleCheck } from "@tabler/icons-react";
-import { formatDate, history } from "@/lib/data";
+import { formatDate, history, jobs } from "@/lib/data";
 import type { HistoryEntry } from "@/lib/types";
 
-export default function UpdateCalendar() {
+interface UpdateCalendarProps {
+  selected: string | null;
+  onSelect: (date: string | null) => void;
+}
+
+export default function UpdateCalendar({ selected, onSelect }: UpdateCalendarProps) {
   const map = useMemo(() => {
     const m = new Map<string, HistoryEntry>();
     history.forEach((h) => m.set(h.date, h));
     return m;
   }, []);
 
+  const counts = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const job of jobs) {
+      const day = (job.first_seen ?? "").slice(0, 10);
+      if (day) m.set(day, (m.get(day) ?? 0) + 1);
+    }
+    return m;
+  }, []);
+
   const latest = history[history.length - 1];
-  const [date, setDate] = useState<string | undefined>(latest?.date);
-  const selected = date ? map.get(date) : undefined;
+  const activeDate = selected ?? latest?.date;
 
   return (
     <Card withBorder radius="lg" padding="lg">
-      <Group justify="space-between" mb="md" wrap="nowrap">
+      <Group justify="space-between" mb="md" wrap="wrap">
         <Group gap="sm" wrap="nowrap">
           <ThemeIcon variant="light" radius="md" size="lg">
             <IconCalendarEvent size={18} />
@@ -36,30 +50,38 @@ export default function UpdateCalendar() {
           <div>
             <Title order={4}>Riwayat update</Title>
             <Text size="xs" c="dimmed">
-              {history.length} kali update
-              {latest ? ` · terakhir ${formatDate(latest.date)}` : ""}
+              Klik tanggal untuk lihat lowongan yang masuk hari itu
             </Text>
           </div>
         </Group>
-        <Badge variant="light" size="lg">
-          tiap 2 hari
-        </Badge>
+        {selected ? (
+          <Button variant="subtle" size="xs" onClick={() => onSelect(null)}>
+            Tampilkan semua
+          </Button>
+        ) : (
+          <Badge variant="light" size="lg">
+            tiap 2 hari
+          </Badge>
+        )}
       </Group>
 
       <Calendar
-        date={date}
+        date={activeDate}
         onDateChange={(d) => {
-          if (d) setDate(d);
+          if (d) onSelect(d === latest?.date && selected === null ? null : d);
         }}
         excludeDate={(d) => !map.has(d)}
         hideOutsideDates
         getDayProps={(d) => {
           const entry = map.get(d);
           if (!entry) return {};
+          const isActive = d === selected;
           return {
             style: {
-              backgroundColor: "var(--mantine-color-blue-light)",
-              color: "var(--mantine-color-blue-light-color)",
+              backgroundColor: isActive
+                ? "var(--mantine-color-blue-6)"
+                : "var(--mantine-color-blue-light)",
+              color: isActive ? "#fff" : "var(--mantine-color-blue-light-color)",
               fontWeight: 700,
             },
           };
@@ -67,32 +89,49 @@ export default function UpdateCalendar() {
       />
 
       {selected ? (
-        <Card withBorder radius="md" padding="sm" mt="sm" bg="var(--mantine-color-default-hover)">
-          <Group justify="space-between">
+        <Card withBorder radius="md" padding="sm" mt="sm" bg="var(--mantine-color-blue-light)">
+          <Group justify="space-between" wrap="wrap">
             <Text size="sm" fw={600}>
-              {formatDate(selected.date)}
+              Update {formatDate(selected)}
             </Text>
-            <Text size="sm" c="dimmed">
-              {selected.total != null ? `${selected.total} lowongan` : "data awal"}
-              {selected.new ? ` · ${selected.new} baru` : ""}
-            </Text>
+            <Badge color="blue">
+              {(counts.get(selected) ?? 0)} lowongan
+            </Badge>
           </Group>
         </Card>
       ) : null}
 
-      <Timeline active={history.length} bulletSize={22} lineWidth={2} mt="lg">
-        {[...history].reverse().map((h) => (
-          <Timeline.Item
-            key={h.date}
-            bullet={<IconCircleCheck size={12} />}
-            title={formatDate(h.date)}
-          >
-            <Text size="xs" c="dimmed">
-              {h.total != null ? `${h.total} lowongan` : "data awal"}
-              {h.new ? ` · ${h.new} baru` : ""}
-            </Text>
-          </Timeline.Item>
-        ))}
+      <Timeline
+        active={history.length}
+        bulletSize={22}
+        lineWidth={2}
+        mt="lg"
+        style={{ cursor: "pointer" }}
+      >
+        {[...history].reverse().map((h) => {
+          const isActive = selected === h.date;
+          return (
+            <Timeline.Item
+              key={h.date}
+              bullet={<IconCircleCheck size={12} />}
+              title={
+                <Text
+                  size="sm"
+                  fw={isActive ? 700 : 500}
+                  c={isActive ? "blue" : undefined}
+                  onClick={() => onSelect(isActive ? null : h.date)}
+                >
+                  {formatDate(h.date)}
+                </Text>
+              }
+            >
+              <Text size="xs" c="dimmed">
+                {(counts.get(h.date) ?? 0)} lowongan
+                {h.new ? ` · ${h.new} baru` : ""}
+              </Text>
+            </Timeline.Item>
+          );
+        })}
       </Timeline>
     </Card>
   );

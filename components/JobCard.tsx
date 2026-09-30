@@ -5,6 +5,7 @@ import {
   Badge,
   Button,
   Card,
+  Checkbox,
   Collapse,
   CopyButton,
   Group,
@@ -27,9 +28,11 @@ import { buildGmailWebUrl, openGmail } from "@/lib/gmail";
 interface JobCardProps {
   job: Job;
   index: number;
+  applied?: boolean;
+  onToggleApplied?: () => void;
 }
 
-export default function JobCard({ job, index }: JobCardProps) {
+export default function JobCard({ job, index, applied, onToggleApplied }: JobCardProps) {
   const [open, setOpen] = useState(false);
   const isEmail = job.method === "email";
   const accent = isEmail ? "blue" : "green";
@@ -40,9 +43,12 @@ export default function JobCard({ job, index }: JobCardProps) {
       withBorder
       radius="lg"
       padding="lg"
-      style={{ borderLeft: `4px solid var(--mantine-color-${accent}-6)` }}
+      style={{
+        borderLeft: `4px solid var(--mantine-color-${accent}-6)`,
+        opacity: applied ? 0.7 : 1,
+      }}
     >
-      <Group justify="space-between" align="flex-start" wrap="nowrap">
+      <Group justify="space-between" align="flex-start" wrap="wrap" gap="sm">
         <div style={{ minWidth: 0 }}>
           <Group gap="xs" wrap="nowrap">
             <Text fw={700} style={{ wordBreak: "break-word" }}>
@@ -86,11 +92,20 @@ export default function JobCard({ job, index }: JobCardProps) {
           ) : null}
         </div>
 
-        {job.score != null ? (
-          <Badge size="lg" radius="xl" color={accent} variant="filled">
-            {job.score}
-          </Badge>
-        ) : null}
+        <Group gap="xs" wrap="nowrap" align="center">
+          {job.score != null ? (
+            <Badge size="lg" radius="xl" color={accent} variant="filled">
+              {job.score}
+            </Badge>
+          ) : null}
+          <Checkbox
+            checked={!!applied}
+            onChange={onToggleApplied}
+            label="Sudah dilamar"
+            size="sm"
+            color="teal"
+          />
+        </Group>
       </Group>
 
       {isEmail ? (

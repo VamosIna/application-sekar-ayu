@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import {
+  ActionIcon,
   AppShell,
   Avatar,
   Badge,
@@ -10,18 +11,23 @@ import {
   Card,
   Container,
   Group,
+  Overlay,
   ScrollArea,
   SimpleGrid,
   Stack,
+  Switch,
   Text,
   TextInput,
   ThemeIcon,
   Title,
+  Tooltip,
 } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import {
   IconBriefcase,
+  IconCheck,
   IconMail,
+  IconRotate,
   IconSearch,
   IconSparkles,
   IconWorld,
@@ -30,6 +36,7 @@ import Sidebar from "./Sidebar";
 import JobCard from "./JobCard";
 import UpdateCalendar from "./UpdateCalendar";
 import ColorSchemeToggle from "./ColorSchemeToggle";
+import { useApplied } from "@/lib/applied";
 import {
   DEFAULT_VIEW,
   formatDate,
@@ -75,19 +82,25 @@ export default function LamaranApp() {
   const [opened, { toggle, close }] = useDisclosure(false);
   const [view, setView] = useState(DEFAULT_VIEW);
   const [query, setQuery] = useState("");
+  const [showApplied, setShowApplied] = useState(false);
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const { applied, persisted, toggle: toggleApplied, clear: clearApplied } = useApplied();
 
   const current = getView(view);
 
   const list = useMemo(() => {
-    const base = jobsForView(view);
+    const base = selectedDate
+      ? jobs.filter((j) => (j.first_seen ?? "").slice(0, 10) === selectedDate)
+      : jobsForView(view);
+    const visible = showApplied ? base : base.filter((j) => !applied.has(j.db_id));
     const q = query.trim().toLowerCase();
-    if (!q) return base;
-    return base.filter((j) =>
+    if (!q) return visible;
+    return visible.filter((j) =>
       `${j.title} ${j.company} ${j.location} ${j.category} ${j.source_label}`
         .toLowerCase()
         .includes(q)
     );
-  }, [view, query]);
+  }, [view, query, applied, showApplied, selectedDate]);
 
   function handleSelect(id: string) {
     setView(id);
@@ -123,7 +136,7 @@ export default function LamaranApp() {
               leftSection={<IconSearch size={16} />}
               value={query}
               onChange={(e) => setQuery(e.currentTarget.value)}
-              w={{ base: 150, sm: 260 }}
+              w={{ base: 130, xs: 170, sm: 260 }}
             />
             <ColorSchemeToggle />
           </Group>
@@ -138,28 +151,59 @@ export default function LamaranApp() {
 
       <AppShell.Main>
         <Container size="lg" px={0}>
-          <SimpleGrid cols={{ base: 2, sm: 4 }} mb="md">
+          <SimpleGrid cols={{ base: 2, sm: 3, lg: 5 }} mb="md">
             <Stat icon={<IconBriefcase size={18} />} label="Total lowongan" value={jobs.length} color="blue" />
             <Stat icon={<IconMail size={18} />} label="Via email" value={totals.email} color="blue" />
             <Stat icon={<IconWorld size={18} />} label="Via portal" value={totals.portal} color="green" />
             <Stat icon={<IconSparkles size={18} />} label="Baru" value={totals.new ?? 0} color="yellow" />
+            <Stat icon={<IconCheck size={18} />} label="Sudah dilamar" value={applied.size} color="teal" />
           </SimpleGrid>
 
-          <UpdateCalendar />
+          <UpdateCalendar selected={selectedDate} onSelect={setSelectedDate} />
 
-          <Group justify="space-between" align="center" mt="lg" mb="sm">
+          <Group justify="space-between" align="center" mt="lg" mb="sm" wrap="wrap">
             <Title order={4}>
-              {current ? methodLabel(current.method) : ""}
-              {current?.category ? ` · ${current.label}` : ""}
+              {selectedDate
+                ? `Update ${formatDate(selectedDate)}`
+                : `${current ? methodLabel(current.method) : ""}${
+                    current?.category ? ` · ${current.label}` : ""
+                  }`}
             </Title>
-            <Badge variant="light" size="lg">
-              {list.length} lowongan
-            </Badge>
+            <Group gap="sm">
+              <Badge variant="light" size="lg">
+                {list.length} lowongan
+              </Badge>
+              <Switch
+                size="sm"
+                checked={showApplied}
+                onChange={(e) => setShowApplied(e.currentTarget.checked)}
+                label={`Tampilkan yang sudah dilamar (${applied.size})`}
+              />
+              {applied.size > 0 ? (
+                <Tooltip label="Reset semua centang">
+                  <ActionIcon variant="default" size="lg" onClick={clearApplied} aria-label="Reset centang">
+                    <IconRotate size={16} />
+                  </ActionIcon>
+                </Tooltip>
+              ) : null}
+            </Group>
           </Group>
+
+          {!persisted ? (
+            <Text size="xs" c="red" mb="sm">
+              Peringatan: penyimpanan browser tidak aktif (mode privat?), centang bisa tidak tersimpan.
+            </Text>
+          ) : null}
 
           <Stack gap="md">
             {list.map((job, i) => (
-              <JobCard key={job.db_id} job={job} index={i + 1} />
+              <JobCard
+                key={job.db_id}
+                job={job}
+                index={i + 1}
+                applied={applied.has(job.db_id)}
+                onToggleApplied={() => toggleApplied(job.db_id)}
+              />
             ))}
             {list.length === 0 ? (
               <Card withBorder radius="lg" padding="xl">
@@ -175,6 +219,16 @@ export default function LamaranApp() {
           </Text>
         </Container>
       </AppShell.Main>
+
+      {opened ? (
+        <Overlay
+          hiddenFrom="md"
+          zIndex={190}
+          backgroundOpacity={0.45}
+          blur={1}
+          onClick={close}
+        />
+      ) : null}
     </AppShell>
   );
 }
