@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import Sidebar from "./Sidebar";
 import JobCard from "./JobCard";
+import UpdateCalendar from "./UpdateCalendar";
 import {
   DEFAULT_VIEW,
   formatDate,
@@ -10,6 +11,7 @@ import {
   getView,
   jobs,
   jobsForView,
+  lastUpdate,
   methodLabel,
   totals,
 } from "@/lib/data";
@@ -74,6 +76,14 @@ export default function LamaranApp() {
         />
 
         <main className="main">
+          <details className="history-card">
+            <summary>
+              Riwayat update
+              {lastUpdate ? ` · terakhir ${formatDate(lastUpdate.date)}` : ""}
+            </summary>
+            <UpdateCalendar />
+          </details>
+
           <div className="view-head">
             <h2>
               {current ? methodLabel(current.method) : ""}

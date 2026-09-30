@@ -1,5 +1,5 @@
 import raw from "@/data/lamaran.json";
-import type { Job, JobMethod, Payload, View } from "./types";
+import type { HistoryEntry, Job, JobMethod, Payload, View } from "./types";
 
 const data = raw as unknown as Payload;
 
@@ -9,6 +9,10 @@ export const cv = data.cv;
 export const totals = data.totals;
 export const minScore = data.min_score;
 export const generatedAt = data.generated_at;
+export const history: HistoryEntry[] = [...(data.history ?? [])].sort((a, b) =>
+  a.date < b.date ? -1 : 1
+);
+export const lastUpdate: HistoryEntry | undefined = history[history.length - 1];
 
 function slug(value: string): string {
   return value

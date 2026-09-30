@@ -33,12 +33,21 @@ export interface Totals {
   new?: number;
 }
 
+export interface HistoryEntry {
+  date: string;
+  at: string;
+  total: number | null;
+  new: number;
+  seeded?: boolean;
+}
+
 export interface Payload {
   generated_at: string;
   min_score: number;
   categories: string[];
   cv: CvInfo;
   totals: Totals;
+  history: HistoryEntry[];
   jobs: Job[];
 }
 

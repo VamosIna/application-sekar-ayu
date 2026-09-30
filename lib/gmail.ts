@@ -1,5 +1,12 @@
+// Spasi HARUS jadi %20, bukan "+" — app Gmail iOS tidak mengartikan "+" sebagai spasi
+// (itu penyebab draft muncul "Kepada+Tim+..."). URLSearchParams default memakai "+",
+// jadi kita ganti ke %20.
+function toQuery(params: Record<string, string>): string {
+  return new URLSearchParams(params).toString().replace(/\+/g, "%20");
+}
+
 export function buildGmailWebUrl(to: string, subject: string, body: string): string {
-  const q = new URLSearchParams({
+  const q = toQuery({
     view: "cm",
     fs: "1",
     tf: "1",
@@ -7,12 +14,12 @@ export function buildGmailWebUrl(to: string, subject: string, body: string): str
     su: subject,
     body,
   });
-  return `https://mail.google.com/mail/?${q.toString()}`;
+  return `https://mail.google.com/mail/?${q}`;
 }
 
 export function buildGmailAppUrl(to: string, subject: string, body: string): string {
-  const q = new URLSearchParams({ to, subject, body });
-  return `googlegmail:///co?${q.toString()}`;
+  const q = toQuery({ to, subject, body });
+  return `googlegmail:///co?${q}`;
 }
 
 function isIOS(): boolean {
