@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import {
   ActionIcon,
   AppShell,
@@ -17,7 +17,6 @@ import {
   Stack,
   Switch,
   Text,
-  TextInput,
   ThemeIcon,
   Title,
   Tooltip,
@@ -28,25 +27,33 @@ import {
   IconCheck,
   IconMail,
   IconRotate,
-  IconSearch,
   IconSparkles,
   IconWorld,
 } from "@tabler/icons-react";
 import Sidebar from "./Sidebar";
 import JobCard from "./JobCard";
 import UpdateCalendar from "./UpdateCalendar";
+import FilterBar, { type FilterState } from "./FilterBar";
 import ColorSchemeToggle from "./ColorSchemeToggle";
 import { useApplied } from "@/lib/applied";
 import {
-  DEFAULT_VIEW,
+  categoryOptions,
   formatDate,
   generatedAt,
-  getView,
   jobs,
-  jobsForView,
   methodLabel,
   totals,
 } from "@/lib/data";
+import type { JobMethod } from "@/lib/types";
+
+const DEFAULT_FILTERS: FilterState = {
+  query: "",
+  method: "all",
+  locations: [],
+  postedWithin: null,
+};
+
+const REF_TIME = Date.parse(generatedAt) || Date.now();
 
 function Stat({
   icon,
@@ -80,32 +87,67 @@ function Stat({
 
 export default function LamaranApp() {
   const [opened, { toggle, close }] = useDisclosure(false);
-  const [view, setView] = useState(DEFAULT_VIEW);
-  const [query, setQuery] = useState("");
-  const [showApplied, setShowApplied] = useState(false);
+  const [filters, setFilters] = useState<FilterState>(DEFAULT_FILTERS);
+  const [category, setCategory] = useState<string | null>(null);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const [showApplied, setShowApplied] = useState(false);
   const { applied, persisted, toggle: toggleApplied, clear: clearApplied } = useApplied();
 
-  const current = getView(view);
+  const updateFilters = useCallback((patch: Partial<FilterState>) => {
+    if (patch.method !== undefined) setCategory(null);
+    setFilters((f) => ({ ...f, ...patch }));
+  }, []);
+
+  const resetFilters = useCallback(() => {
+    setFilters(DEFAULT_FILTERS);
+    setCategory(null);
+    setSelectedDate(null);
+  }, []);
+
+  const activeCount =
+    (filters.method !== "all" ? 1 : 0) +
+    (filters.locations.length > 0 ? 1 : 0) +
+    (filters.postedWithin ? 1 : 0) +
+    (selectedDate ? 1 : 0);
+
+  const catOptions = useMemo(() => categoryOptions(filters.method), [filters.method]);
+  const methodTotal = useMemo(
+    () => (filters.method === "all" ? jobs.length : jobs.filter((j) => j.method === filters.method).length),
+    [filters.method]
+  );
 
   const list = useMemo(() => {
-    const base = selectedDate
-      ? jobs.filter((j) => (j.first_seen ?? "").slice(0, 10) === selectedDate)
-      : jobsForView(view);
-    const visible = showApplied ? base : base.filter((j) => !applied.has(j.db_id));
-    const q = query.trim().toLowerCase();
-    if (!q) return visible;
-    return visible.filter((j) =>
-      `${j.title} ${j.company} ${j.location} ${j.category} ${j.source_label}`
-        .toLowerCase()
-        .includes(q)
-    );
-  }, [view, query, applied, showApplied, selectedDate]);
+    let items = jobs;
 
-  function handleSelect(id: string) {
-    setView(id);
-    close();
-  }
+    if (selectedDate) items = items.filter((j) => (j.first_seen ?? "").slice(0, 10) === selectedDate);
+    if (filters.method !== "all") items = items.filter((j) => j.method === filters.method);
+    if (category) items = items.filter((j) => j.category === category);
+    if (filters.locations.length) items = items.filter((j) => filters.locations.includes(j.location));
+    if (filters.postedWithin) {
+      const cutoff = REF_TIME - Number(filters.postedWithin) * 86_400_000;
+      items = items.filter((j) => {
+        const t = Date.parse(j.posted_at);
+        return Number.isFinite(t) && t >= cutoff;
+      });
+    }
+    if (!showApplied) items = items.filter((j) => !applied.has(j.db_id));
+
+    const q = filters.query.trim().toLowerCase();
+    if (q) {
+      items = items.filter((j) =>
+        `${j.title} ${j.company} ${j.location} ${j.category} ${j.source_label}`
+          .toLowerCase()
+          .includes(q)
+      );
+    }
+    return items;
+  }, [filters, category, selectedDate, showApplied, applied]);
+
+  const heading = selectedDate
+    ? `Update ${formatDate(selectedDate)}`
+    : `${
+        filters.method === "all" ? "Semua lowongan" : methodLabel(filters.method as JobMethod)
+      }${category ? ` · ${category}` : ""}`;
 
   return (
     <AppShell
@@ -117,7 +159,12 @@ export default function LamaranApp() {
         <Group h="100%" px="md" justify="space-between" wrap="nowrap">
           <Group wrap="nowrap" gap="sm">
             <Burger opened={opened} onClick={toggle} hiddenFrom="md" size="sm" />
-            <Avatar radius="xl" color="blue" variant="gradient" gradient={{ from: "blue", to: "green" }}>
+            <Avatar
+              radius="xl"
+              color="blue"
+              variant="gradient"
+              gradient={{ from: "blue", to: "green" }}
+            >
               SA
             </Avatar>
             <Box visibleFrom="sm">
@@ -130,22 +177,22 @@ export default function LamaranApp() {
             </Box>
           </Group>
 
-          <Group wrap="nowrap" gap="xs">
-            <TextInput
-              placeholder="Cari posisi / perusahaan"
-              leftSection={<IconSearch size={16} />}
-              value={query}
-              onChange={(e) => setQuery(e.currentTarget.value)}
-              w={{ base: 130, xs: 170, sm: 260 }}
-            />
-            <ColorSchemeToggle />
-          </Group>
+          <ColorSchemeToggle />
         </Group>
       </AppShell.Header>
 
       <AppShell.Navbar p="md">
         <AppShell.Section grow component={ScrollArea}>
-          <Sidebar view={view} onSelect={handleSelect} />
+          <Sidebar
+            color={filters.method === "portal" ? "green" : "blue"}
+            total={methodTotal}
+            options={catOptions}
+            category={category}
+            onSelect={(c) => {
+              setCategory(c);
+              close();
+            }}
+          />
         </AppShell.Section>
       </AppShell.Navbar>
 
@@ -159,16 +206,17 @@ export default function LamaranApp() {
             <Stat icon={<IconCheck size={18} />} label="Sudah dilamar" value={applied.size} color="teal" />
           </SimpleGrid>
 
+          <FilterBar
+            value={filters}
+            onChange={updateFilters}
+            onReset={resetFilters}
+            activeCount={activeCount}
+          />
+
           <UpdateCalendar selected={selectedDate} onSelect={setSelectedDate} />
 
           <Group justify="space-between" align="center" mt="lg" mb="sm" wrap="wrap">
-            <Title order={4}>
-              {selectedDate
-                ? `Update ${formatDate(selectedDate)}`
-                : `${current ? methodLabel(current.method) : ""}${
-                    current?.category ? ` · ${current.label}` : ""
-                  }`}
-            </Title>
+            <Title order={4}>{heading}</Title>
             <Group gap="sm">
               <Badge variant="light" size="lg">
                 {list.length} lowongan
@@ -208,7 +256,7 @@ export default function LamaranApp() {
             {list.length === 0 ? (
               <Card withBorder radius="lg" padding="xl">
                 <Text ta="center" c="dimmed">
-                  Tidak ada lowongan yang cocok.
+                  Tidak ada lowongan yang cocok dengan filter ini.
                 </Text>
               </Card>
             ) : null}
@@ -221,13 +269,7 @@ export default function LamaranApp() {
       </AppShell.Main>
 
       {opened ? (
-        <Overlay
-          hiddenFrom="md"
-          zIndex={190}
-          backgroundOpacity={0.45}
-          blur={1}
-          onClick={close}
-        />
+        <Overlay hiddenFrom="md" zIndex={190} backgroundOpacity={0.45} blur={1} onClick={close} />
       ) : null}
     </AppShell>
   );

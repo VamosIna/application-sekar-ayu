@@ -63,6 +63,32 @@ export function methodLabel(method: JobMethod): string {
   return method === "email" ? "Via Email" : "Via Portal";
 }
 
+export interface Option {
+  value: string;
+  label: string;
+  count: number;
+}
+
+export const locationOptions: Option[] = (() => {
+  const m = new Map<string, number>();
+  jobs.forEach((j) => {
+    const loc = (j.location || "").trim();
+    if (loc) m.set(loc, (m.get(loc) || 0) + 1);
+  });
+  return [...m.entries()]
+    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+    .map(([value, count]) => ({ value, label: value, count }));
+})();
+
+export function categoryOptions(method: "all" | JobMethod): Option[] {
+  const base = method === "all" ? jobs : jobs.filter((j) => j.method === method);
+  const m = new Map<string, number>();
+  base.forEach((j) => m.set(j.category, (m.get(j.category) || 0) + 1));
+  return categories
+    .filter((c) => m.has(c))
+    .map((c) => ({ value: c, label: c, count: m.get(c) as number }));
+}
+
 export function formatDate(iso?: string): string {
   if (!iso) return "";
   const d = new Date(iso);

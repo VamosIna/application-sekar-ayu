@@ -1,77 +1,56 @@
 "use client";
 
 import { Badge, Group, NavLink, Stack, Text } from "@mantine/core";
-import { emailViews, portalViews, totals } from "@/lib/data";
-import type { JobMethod, View } from "@/lib/types";
+import type { Option } from "@/lib/data";
 
 interface SidebarProps {
-  view: string;
-  onSelect: (id: string) => void;
-}
-
-interface SectionProps {
-  title: string;
-  total: number;
-  items: View[];
   color: "blue" | "green";
-  view: string;
-  onSelect: (id: string) => void;
+  total: number;
+  options: Option[];
+  category: string | null;
+  onSelect: (category: string | null) => void;
 }
 
-function Section({ title, total, items, color, view, onSelect }: SectionProps) {
+export default function Sidebar({ color, total, options, category, onSelect }: SidebarProps) {
   return (
     <Stack gap={4}>
       <Group justify="space-between" px="xs">
         <Text size="xs" fw={700} tt="uppercase" c="dimmed">
-          {title}
+          Kategori
         </Text>
         <Badge size="sm" variant="light" color={color}>
           {total}
         </Badge>
       </Group>
-      {items.map((item) => (
+
+      <NavLink
+        label="Semua"
+        color={color}
+        variant="light"
+        active={category === null}
+        onClick={() => onSelect(null)}
+        rightSection={
+          <Badge size="sm" variant="transparent" color="gray" px={6}>
+            {total}
+          </Badge>
+        }
+      />
+
+      {options.map((o) => (
         <NavLink
-          key={item.id}
-          label={item.label}
+          key={o.value}
+          label={o.label}
           color={color}
           variant="light"
-          active={view === item.id}
-          onClick={() => onSelect(item.id)}
+          active={category === o.value}
+          onClick={() => onSelect(o.value)}
           rightSection={
             <Badge size="sm" variant="transparent" color="gray" px={6}>
-              {item.count}
+              {o.count}
             </Badge>
           }
         />
       ))}
-    </Stack>
-  );
-}
-
-const colorOf: Record<JobMethod, "blue" | "green"> = {
-  email: "blue",
-  portal: "green",
-};
-
-export default function Sidebar({ view, onSelect }: SidebarProps) {
-  return (
-    <Stack gap="lg">
-      <Section
-        title="Via Email"
-        total={totals.email}
-        items={emailViews}
-        color={colorOf.email}
-        view={view}
-        onSelect={onSelect}
-      />
-      <Section
-        title="Via Portal"
-        total={totals.portal}
-        items={portalViews}
-        color={colorOf.portal}
-        view={view}
-        onSelect={onSelect}
-      />
     </Stack>
   );
 }

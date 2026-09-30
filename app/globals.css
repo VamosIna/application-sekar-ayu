@@ -1,10 +1,26 @@
+:root {
+  --app-font: var(--font-inter), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    Helvetica, Arial, sans-serif;
+  /* definisikan variabel yang dipakai Mantine (provider tidak meng-inject-nya) */
+  --mantine-font-family: var(--app-font);
+  --mantine-heading-font-family: var(--app-font);
+  --mantine-font-family-monospace: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
 html,
 body {
   padding: 0;
   margin: 0;
+  font-family: var(--app-font);
 }
 
-/* sedikit penyempurnaan di atas Mantine */
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
 a {
   color: inherit;
 }
