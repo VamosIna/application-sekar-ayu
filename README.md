@@ -1,95 +1,152 @@
-# lamaran-site
+# lamaran-upload
 
-Situs statis (Next.js) untuk daftar lamaran **Sekar Ayu Herdyningrum**.
-Data berasal dari `job-automation` (`python main.py refresh`) dan dibaca dari
+Situs statis (Next.js 15) untuk dashboard lamaran **Sekar Ayu Herdyningrum**.
+Data berasal dari `~/job-automation` (`python main.py refresh`) dan dibaca dari
 `data/lamaran.json`.
 
-## Cara kerja singkat
+## Cara kerja
 
 ```
-~/job-automation                     ~/Desktop/lamaran-site
-  main.py refresh  ──tulis──►  ~/Desktop/lamaran.json  ──salak oto──►  data/lamaran.json  ──►  Next.js build
-       └─ juga menulis lamaran.html & lowongan.xlsx
+~/job-automation                          ~/Desktop/lamaran-upload
+  main.py refresh  ──►  ~/Desktop/lamaran.json  ──►  data/lamaran*.json  ──►  Next.js build  ──►  push  ──►  GitHub Pages
+       └─ juga menulis lamaran.html & lowongan.xlsx ke ~/Desktop
 ```
 
-- `main.py refresh` **selalu** membuat `~/Desktop/lamaran.json`.
-- JSON itu **akumulatif**: lowongan lama tetap ada walau sudah kadaluarsa.
-- Ada tanggal update terakhir: `generated_at` (global) + `first_seen`/`updated_at` per lowongan.
-- Hasil JSON otomatis disalin ke `data/lamaran.json` di project ini (kalau foldernya ada).
+- `main.py refresh` selalu menulis `~/Desktop/lamaran.json` (output untuk dibaca manusia).
+- Sekaligus menyalin **3 file** ke `data/` project ini:
+  `lamaran.json` (semua), `lamaran_jabode.json`, `lamaran_bali.json`.
+- Data **akumulatif**: lowongan lama tidak hilang walau sudah kadaluarsa.
+- Tanggal update: `generated_at` (global) + `first_seen`/`updated_at` per lowongan.
 
-## Update konten (rutin)
+> Folder tujuan bisa diubah lewat env `LAMARAN_SITE_DATA` (default: `~/Desktop/lamaran-upload/data`).
+
+## Update harian (satu perintah)
+
+```bash
+cd ~/Desktop/lamaran-upload
+./update.sh
+```
+
+Itu melakukan: refresh data → build Next.js → `git commit`. **Tidak** push —
+review dulu, lalu:
+
+```bash
+git show --stat HEAD
+git push origin main     # GitHub Actions auto-deploy ke GitHub Pages
+```
+
+### Opsi
+
+| Perintah | Arti |
+|---|---|
+| `./update.sh` | Refresh penuh (10-25 menit, banyak panggilan LLM gratis) + build + commit |
+| `./update.sh --json-only` | Lewati scrape & LLM, cuma regenerate JSON dari DB + build. **Cepat** (~10 detik) |
+| `./update.sh --no-build` | Refresh + commit tanpa build lokal (biarkan CI yang build) |
+| `./update.sh --push` | Sekalian push (langsung ganti website) |
+
+Kalau `data/*.json` tidak berubah isinya, script tidak membuat commit kosong.
+
+### Manual (tanpa script)
 
 ```bash
 cd ~/job-automation && source .venv/bin/activate
-python main.py refresh          # -> lamaran.json (+ html + xlsx), tersalin ke project ini
+python main.py refresh              # atau: python main.py json  (regenerate JSON saja)
+cd ~/Desktop/lamaran-upload
+npm run build && git add -A data && git commit -m "update" && git push
 ```
 
-Kalau hanya mau regenerasi JSON (tanpa scrape ulang):
+## Setup (sekali saja)
 
 ```bash
-python main.py json
-# atau ke lokasi lain:
-python main.py json --out ~/Desktop/lamaran.json
+cd ~/Desktop/lamaran-upload
+npm ci
 ```
 
-Setelah JSON masuk, rebuild situs:
+Deploy lewat GitHub Pages:
 
-```bash
-cd ~/Desktop/lamaran-site
-npm install        # sekali saja
-npm run build      # hasil statis ada di folder out/
-```
+1. Buat repo di akun GitHub **pribadi**, lalu:
+   ```bash
+   cd ~/Desktop/lamaran-upload
+   git remote add origin git@github.com:<username>/<repo>.git
+   git push -u origin main
+   ```
+2. GitHub → **Settings → Pages → Build and deployment → Source: GitHub Actions**.
+3. Tunggu workflow hijau, cek URL yang muncul di log.
+
+`basePath` diisi otomatis oleh workflow (`NEXT_PUBLIC_BASE_PATH`), jadi repo
+`<username>.github.io` dan repo biasa (`/lamaran`) dua-duanya jalan tanpa ubah kode.
 
 ## Jalankan lokal
 
 ```bash
-npm run dev        # http://localhost:3000
+npm run dev     # http://localhost:3000
 ```
 
-## Tombol "Buka di Gmail"
-
-- Di **iPhone/iPad**: mencoba membuka **app Gmail** (`googlegmail://`). Kalau app
-  tidak terpasang, otomatis fallback ke **compose web Gmail** — draft (To/Subject/Body)
-  tetap terisi siap kirim.
-- Di **Android/desktop**: langsung membuka compose web Gmail di tab baru, draft terisi.
-
-Tombol lain: **Download CV**, **Copy cover letter** (untuk lamaran via portal),
-dan **Lowongan** (link postingan asli).
-
-## Deploy ke GitHub Pages
-
-Project ini sudah siap: `next.config.mjs` memakai `output: "export"`, dan ada
-workflow di `.github/workflows/deploy.yml`.
-
-1. Buat repo baru di akun GitHub **pribadi** (jangan pakai akun yang ada "ayana").
-2. Push project ini (branch `main`):
-   ```bash
-   cd ~/Desktop/lamaran-site
-   git init -b main
-   git add .
-   git commit -m "init lamaran site"
-   git remote add origin git@github.com:<username>/<repo>.git
-   git push -u origin main
-   ```
-3. Di GitHub: **Settings → Pages → Build and deployment → Source: GitHub Actions**.
-4. Setiap push ke `main`, GitHub Actions build & deploy otomatis.
-   - Repo `<username>.github.io` → URL `https://<username>.github.io/`
-   - Repo biasa (mis. `lamaran`) → URL `https://<username>.github.io/lamaran/`
-   - `basePath` diisi otomatis oleh workflow (via `NEXT_PUBLIC_BASE_PATH`).
-
-Tes build lokal dengan basePath (opsional):
+Tes build dengan basePath (opsional):
 
 ```bash
 NEXT_PUBLIC_BASE_PATH=/lamaran npm run build
 ```
 
+## Tombol aksi
+
+- **Buka di Gmail** — iPhone/iPad coba app Gmail (`googlegmail://`), fallback ke
+  compose web. To/Subject/Body terisi siap kirim. Draft email beneran tidak bisa
+  di-attach lewat URL Gmail, jadi `cv.pdf` ditambahkan manual di `maildraft`
+  (`python main.py maildraft` — buat draft sungguhan di folder Drafts + attach CV).
+- **Copy cover letter** — untuk lamaran via portal.
+- **Lowongan** — link postingan asli.
+- **Centang "sudah dilamar"** — disimpan di `localStorage` browser sebagai cache, dan
+  bisa disinkronkan antar perangkat lewat Cloudflare Worker + D1. 12 lowongan email
+  dari batch pertama otomatis tercentang.
+
+## Sinkronisasi centang (opsional)
+
+Secara default centang hanya ada di browser ini (seperti semula). Kalau mau ikut
+tersimpan di server sehingga bisa dibuka dari HP/laptop/browser lain, deploy
+Worker gratis yang menyimpan **hanya daftar angka `db_id`**:
+
+- Panduan lengkap: **[SETUP.md](./SETUP.md)**
+- Kode Worker: `worker/`
+
+Data lowongan tetap statis di GitHub Pages - tidak ada yang berubah di pipeline
+`job-automation`. Kalau Worker tidak aktif, dashboard tetap jalan persis seperti
+sekarang.
+
+Ringkas, kalau sudah punya akun Cloudflare:
+
+```bash
+cd ~/Desktop/lamaran-upload/worker
+npm install
+npx wrangler d1 create lamaran-applied      # salin database_id ke wrangler.toml
+npx wrangler d1 execute lamaran-applied --file=schema.sql
+npx wrangler secret put AUTH_TOKEN         # passphrase
+npx wrangler deploy                         # salin URL Worker
+```
+
+Lalu di root project, `echo 'NEXT_PUBLIC_SYNC_URL=<url-worker>' >> .env.local`,
+build ulang, dan klik **Sambungkan** di dashboard.
+
+Tes Worker tanpa deploy: `node worker/test.mjs`
+
 ## Struktur
 
 ```
-app/            layout + page + globals.css
-components/     LamaranApp, Sidebar, JobCard
-lib/            data.ts (baca JSON), gmail.ts (deep-link iOS), types.ts
-data/lamaran.json   data dari job-automation (di-commit agar CI bisa build)
-public/.nojekyll
+app/                  layout + page + globals.css
+components/           LamaranApp, Sidebar, JobCard, FilterBar, UpdateCalendar, SyncStatus
+lib/                  data.ts (baca JSON), gmail.ts (deep-link iOS), applied.ts, types.ts
+data/lamaran*.json    output job-automation — di-commit agar CI bisa build
+worker/               Cloudflare Worker + D1 (opsional, untuk sinkron centang)
+update.sh             refresh + build + commit
 .github/workflows/deploy.yml
 ```
+
+## Catatan
+
+- `index.html` hasil build **±16 MB** (551 lowongan, `breakdown` + cover letter ikut
+  ter-render). Gzip ≈ 0.8 MB, masih aman untuk GitHub Pages. Kalau nanti lowongan
+  tumbuh > 2000, pertimbangkan trim `breakdown` dari payload.
+- `data/` **harus** di-commit — frontend membacanya saat build, bukan runtime fetch.
+- Tidak ada backend untuk data lowongan. Tidak ada server. Tidak ada kartu kredit.
+- `NEXT_PUBLIC_SYNC_URL` hanya dipakai kalau kamu sengaja mengisinya; kalau kosong,
+  semua `lib/applied.ts` berjalan murni `localStorage`.

@@ -53,7 +53,13 @@ export default function JobCard({ job, index, applied, onToggleApplied }: JobCar
       style={{
         borderLeft: `4px solid var(--mantine-color-${accent}-6)`,
         opacity: applied ? 0.7 : 1,
+        background: "var(--mantine-bg-card)",
+        boxShadow: "0 1px 2px 0 rgba(0, 0, 0, 0.05)",
+        transition: "all 0.2s ease",
+        ...(applied && { opacity: 0.7 }),
       }}
+      onMouseEnter={() => setOpen(!open)}
+      onMouseLeave={() => setOpen(false)}
     >
       <Group justify="space-between" align="flex-start" wrap="wrap" gap="sm">
         <div style={{ minWidth: 0 }}>

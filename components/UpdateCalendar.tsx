@@ -8,8 +8,8 @@ import {
   Group,
   Text,
   ThemeIcon,
-  Timeline,
   Title,
+  Timeline,
 } from "@mantine/core";
 import { Calendar } from "@mantine/dates";
 import { IconCalendarEvent, IconCircleCheck } from "@tabler/icons-react";
@@ -135,12 +135,12 @@ export default function UpdateCalendar({ selected, onSelect }: UpdateCalendarPro
                   {formatDate(h.date)}
                 </Text>
               }
-            >
-              <Text size="xs" c="dimmed">
-                {(counts.get(h.date) ?? 0)} lowongan
-                {h.new ? ` · ${h.new} baru` : ""}
-              </Text>
-            </Timeline.Item>
+              >
+                <Text size="xs" c="dimmed">
+                  {(counts.get(h.date) ?? 0)} lowongan
+                  {h.new ? ` · ${h.new} baru` : ""}
+                </Text>
+              </Timeline.Item>
           );
         })}
       </Timeline>

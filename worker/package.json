@@ -1,0 +1,15 @@
+{
+  "name": "lamaran-applied-worker",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "db:create": "wrangler d1 create lamaran-applied",
+    "db:init": "wrangler d1 execute lamaran-applied --file=schema.sql"
+  },
+  "devDependencies": {
+    "wrangler": "^4.0.0"
+  }
+}

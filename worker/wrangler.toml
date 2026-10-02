@@ -1,0 +1,30 @@
+# wrangler.toml - Cloudflare Workers + D1 untuk sinkron centang "sudah dilamar".
+#
+# Deploy:
+#   cd worker
+#   npx wrangler d1 create lamaran-applied      # salin database_id ke bawah
+#   npx wrangler d1 execute lamaran-applied --file=schema.sql
+#   npx wrangler secret put AUTH_TOKEN           # ketik passphrase, lalu Enter
+#   npm install
+#   npx wrangler deploy
+#
+# Setelah deploy, dapat URL seperti https://lamaran-applied.<subdomain>.workers.dev
+
+name = "lamaran-applied"
+main = "src/index.js"
+compatibility_date = "2026-10-01"
+
+# Ganti database_id dengan hasil `wrangler d1 create`.
+#[[d1_databases]]
+#binding = "DB"
+#database_name = "lamaran-applied"
+#database_id = "ISI-DARI-WRANGLER-D1-CREATE"
+#migrations_dir = "migrations"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "lamaran-applied"
+database_id = "ISI-DARI-WRANGLER-D1-CREATE"
+
+# AUTH_TOKEN sengaja TIDAK ada di sini (harus `wrangler secret put`).
+# Kalau diisi di file ini, bocor ke git.

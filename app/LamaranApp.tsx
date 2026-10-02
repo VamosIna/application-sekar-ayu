@@ -31,12 +31,12 @@ import {
   IconTargetArrow,
   IconWorld,
 } from "@tabler/icons-react";
-import Sidebar from "./Sidebar";
-import JobCard from "./JobCard";
-import UpdateCalendar from "./UpdateCalendar";
-import FilterBar, { type FilterState } from "./FilterBar";
-import ColorSchemeToggle from "./ColorSchemeToggle";
-import SyncStatus from "./SyncStatus";
+import Sidebar from "@/components/Sidebar";
+import JobCard from "@/components/JobCard";
+import UpdateCalendar from "@/components/UpdateCalendar";
+import FilterBar, { type FilterState } from "@/components/FilterBar";
+import ColorSchemeToggle from "@/components/ColorSchemeToggle";
+import SyncStatus from "@/components/SyncStatus";
 import { syncEnabled, useApplied } from "@/lib/applied";
 import {
   categoryOptions,
@@ -54,8 +54,6 @@ const DEFAULT_FILTERS: FilterState = {
   locations: [],
   postedWithin: null,
 };
-
-const REF_TIME = Date.parse(generatedAt) || Date.now();
 
 function Stat({
   icon,
@@ -136,9 +134,9 @@ export default function LamaranApp() {
     if (category) items = items.filter((j) => j.category === category);
     if (filters.locations.length) items = items.filter((j) => filters.locations.includes(j.location));
     if (filters.postedWithin) {
-      const cutoff = REF_TIME - Number(filters.postedWithin) * 86_400_000;
+      const cutoff = Date.now() - Number(filters.postedWithin) * 86_400_000;
       items = items.filter((j) => {
-        const t = Date.parse(j.posted_at);
+        const t = new Date(j.posted_at).getTime();
         return Number.isFinite(t) && t >= cutoff;
       });
     }
@@ -215,12 +213,42 @@ export default function LamaranApp() {
       <AppShell.Main>
         <Container size="lg" px={0}>
           <SimpleGrid cols={{ base: 2, sm: 3, lg: 6 }} mb="md">
-            <Stat icon={<IconBriefcase size={18} />} label="Total lowongan" value={jobs.length} color="blue" />
-            <Stat icon={<IconMail size={18} />} label="Via email" value={totals.email} color="blue" />
-            <Stat icon={<IconWorld size={18} />} label="Via portal" value={totals.portal} color="green" />
-            <Stat icon={<IconSparkles size={18} />} label="Baru" value={totals.new ?? 0} color="yellow" />
-            <Stat icon={<IconTargetArrow size={18} />} label="Rata-rata kecocokan" value={`${avgScore}%`} color="grape" />
-            <Stat icon={<IconCheck size={18} />} label="Sudah dilamar" value={applied.size} color="teal" />
+            <Stat
+              icon={<IconBriefcase size={18} />}
+              label="Total lowongan"
+              value={jobs.length}
+              color="blue"
+            />
+            <Stat
+              icon={<IconMail size={18} />}
+              label="Via email"
+              value={totals.email}
+              color="blue"
+            />
+            <Stat
+              icon={<IconWorld size={18} />}
+              label="Via portal"
+              value={totals.portal}
+              color="green"
+            />
+            <Stat
+              icon={<IconSparkles size={18} />}
+              label="Baru"
+              value={totals.new ?? 0}
+              color="yellow"
+            />
+            <Stat
+              icon={<IconTargetArrow size={18} />}
+              label="Rata-rata kecocokan"
+              value={`${avgScore}%`}
+              color="grape"
+            />
+            <Stat
+              icon={<IconCheck size={18} />}
+              label="Sudah dilamar"
+              value={applied.size}
+              color="teal"
+            />
           </SimpleGrid>
 
           <FilterBar

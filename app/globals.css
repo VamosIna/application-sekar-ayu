@@ -1,26 +1,163 @@
+/* ==========================================
+   Job Automation Dashboard - Design Tokens
+   Admin & Pelamar Friendly
+   ========================================== */
+
 :root {
   --app-font: var(--font-inter), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
     Helvetica, Arial, sans-serif;
-  /* definisikan variabel yang dipakai Mantine (provider tidak meng-inject-nya) */
   --mantine-font-family: var(--app-font);
   --mantine-heading-font-family: var(--app-font);
   --mantine-font-family-monospace: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  /* Primary colors - Email: Blue, Portal: Green */
+  --mantine-color-blue-primary: #1F4E78;
+  --mantine-color-blue-light: #E8EDF5;
+  --mantine-color-blue-lightest: #F0F4FA;
+  --mantine-color-green-primary: #2F9E44;
+  --mantine-color-green-light: #E8F5E9;
+  --mantine-color-green-lightest: #F1F8F1;
+
+  /* Neutral colors */
+  --mantine-color-gray-1: #86868B;
+  --mantine-color-gray-2: #E4E6E7;
+  --mantine-color-gray-3: #F5F5F7;
+  --mantine-color-gray-4: #F2F2F2;
+  --mantine-color-gray-5: #71717A;
+  --mantine-color-gray-6: #5A5A5D;
+  --mantine-color-gray-7: #3A3A3C;
+  --mantine-color-gray-8: #242426;
+  --mantine-color-gray-9: #18181B;
+
+  /* Status/feedback colors */
+  --mantine-color-success: #2F9E44;
+  --mantine-color-warning: #F57F17;
+  --mantine-color-error: #E63946;
+  --mantine-color-info: #1F4E78;
+
+  /* Background variants */
+  --mantine-bg-light: #F8F9FA;
+  --mantine-bg-card: #FFFFFF;
+  --mantine-bg-muted: #F1F3F5;
 }
+
+/* ==========================================
+   Base improvements
+   ========================================== */
 
 html,
 body {
   padding: 0;
   margin: 0;
   font-family: var(--app-font);
-}
-
-button,
-input,
-textarea,
-select {
-  font: inherit;
+  background: var(--mantine-bg-light);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 a {
   color: inherit;
+  text-decoration: none;
+}
+
+*:focus-visible {
+  outline: 2px solid var(--mantine-color-blue-primary);
+  outline-offset: 2px;
+}
+
+/* ==========================================
+   Scrollbar
+   ========================================== */
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--mantine-bg-muted);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--mantine-color-gray-3);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--mantine-color-gray-5);
+}
+
+/* ==========================================
+   Animations
+   ========================================== */
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideIn {
+  from { transform: translateX(-10px); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+.fade-in-up {
+  animation: fadeInUp 0.3s ease-out forwards;
+}
+
+.fade-in {
+  animation: fadeIn 0.3s ease-out forwards;
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0s !important;
+    animation-iteration-count: 0 !important;
+    transition-duration: 0s !important;
+  }
+}
+
+/* ==========================================
+   Selection
+   ========================================== */
+
+::selection {
+  background: var(--mantine-color-blue-primary);
+  color: white;
+}
+
+/* ==========================================
+   Focus states
+   ========================================== */
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--mantine-color-blue-primary);
+  outline-offset: 2px;
+}
+
+/* Reduced motion for reduces */
+@media (prefers-reduced-motion: reduce) {
+  button:focus-visible,
+  a:focus-visible {
+    outline: 2px solid var(--mantine-color-blue-primary);
+    outline-offset: 2px;
+  }
 }
